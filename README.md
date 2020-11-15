@@ -32,3 +32,19 @@ By default, whenever you bring down the Docker network, your MySQL data will be 
 volumes:
   - ./mysql:/var/lib/mysql
 ```
+
+# Issues
+
+## Server Error 500
+> exec into php container: docker exec -ti php sh
+
+> install dependencies: composer install 
+
+> run node install: docker run --rm node install
+
+## Unable to access storage
+> exec into php container: docker exec -ti php sh
+
+> change ownership: 
+<code>chown -R www-data: storage</code>
+<code>chown -R www-data: bootstrap/cache</code>
