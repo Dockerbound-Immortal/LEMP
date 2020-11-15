@@ -1,61 +1,74 @@
-version: '3'
+version: '3.8'
 
 networks:
-    nginx-php74-mysql8-node:
+    laravel:
+        driver: bridge
 
 services:
 
-    # nginx
-    nginx-service:
-        image: nginx:stable-alpine
-        container_name: nginx-container
+    nginx:
+        image: nginx:1.18.0-alpine
+        container_name: nginx
         ports:
             - "8080:80"
         volumes:
-            - ./app:/var/www/project
+            - ./src:/var/www/html
             - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
         depends_on:
-            - php74-service
-            - mysql8-service
+            - php
+            - mysql
         networks:
-            - nginx-php74-mysql8-node
+            - laravel
 
-    # php
-    php74-service:
+    php:
         build:
-            context: .
-            dockerfile: ./php/Dockerfile
-        container_name: php74-container
+            context: ./php
+            dockerfile: Dockerfile
+        container_name: php
         ports:
             - "9000:9000"
         volumes:
-            - ./app:/var/www/project
+            - ./src:/var/www/html
         networks:
-            - nginx-php74-mysql8-node
+            - laravel
 
-    # mysql
-    mysql8-service:
-        image: mysql:8
-        container_name: mysql8-container
+    mysql:
+        image: mysql:8.0.22
+        container_name: mysql
         ports:
-            - "4306:3306"
+            - "3306:3306"
         volumes:
             - ./mysql:/var/lib/mysql
         command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-        restart: always # always restart unless stopped manually
+        restart: always 
         environment:
-            MYSQL_USER: root
-            MYSQL_ROOT_PASSWORD: secret
-            MYSQL_PASSWORD: secret
+            MYSQL_USER: ${MYSQL_USER}
+            MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+            MYSQL_PASSWORD: ${MYSQL_PASSWORD}
         networks:
-            - nginx-php74-mysql8-node
+            - laravel
 
-    # node
-    node-service:
-        image: node:latest
-        container_name: node-container
+    node:
+        image: node:15-alpine3.10
+        container_name: node
         volumes:
-            - ./app:/var/www/project
-        working_dir: /var/www/project
+            - ./src:/var/www/html
+        working_dir: /var/www/html
         networks:
-            - nginx-php74-mysql8-node
+            - laravel
+
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin
+        container_name: phpmyadmin
+        ports:
+            - 5000:80
+        environment:
+            - PMA_ARBITRARY=1
+            - PMA_HOST=mysql
+        restart: always 
+        links:
+            - mysql
+        depends_on:
+            - mysql
+        networks:
+            - laravel
